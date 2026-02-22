@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>🍺 飲みすごろく</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ====== SETUP ====== -->
+<div id="setup">
+  <div class="game-title">🍺 飲みすごろく</div>
+  <div class="game-sub">のんで・しゃべって・盛り上がれ！🎉</div>
+  <div class="setup-card">
+    <div class="setup-label">プレイヤー数</div>
+    <div class="count-row" id="count-row">
+      <button class="cnt-btn" data-n="2">2</button>
+      <button class="cnt-btn on" data-n="3">3</button>
+      <button class="cnt-btn" data-n="4">4</button>
+      <button class="cnt-btn" data-n="5">5</button>
+      <button class="cnt-btn" data-n="6">6</button>
+    </div>
+    <div class="setup-label">名前を入力</div>
+    <div class="p-inputs" id="p-inputs"></div>
+    <button class="start-btn" onclick="startGame()">🎲 ゲームスタート！</button>
+  </div>
+</div>
+
+<!-- ====== GAME ====== -->
+<!-- 5×6 螺旋グリッドのボード + サイドパネルの横並びレイアウト -->
+<div id="game">
+
+  <!-- 螺旋ボード: 5列×6行、マスはスクリプトが動的に挿入 -->
+  <div class="board" id="board"></div>
+
+  <!-- サイドパネル: ゲームコントロール -->
+  <div class="side-panel">
+    <div class="center-game-title">🍺 飲みすごろく</div>
+    <div class="pbar" id="pbar"></div>
+    <div class="turn-info" id="turn-info"></div>
+    <div class="dice-row">
+      <div class="dice" id="dice" onclick="rollDice()">🎲</div>
+      <div class="dice-result-box">
+        <div class="dice-result-num" id="dice-num">-</div>
+        <div class="dice-result-label">の目</div>
+      </div>
+    </div>
+    <button class="roll-btn" id="roll-btn" onclick="rollDice()">サイコロを振る！</button>
+    <div class="legend">
+      <span class="leg sq-drink">🍺 飲む</span>
+      <span class="leg sq-all_drink">🥂 全員飲む</span>
+      <span class="leg sq-quiz">❓ クイズ</span>
+      <span class="leg sq-game">🎲 ゲーム</span>
+      <span class="leg sq-advance">⏩ 進む</span>
+      <span class="leg sq-retreat">⏪ 戻る</span>
+      <span class="leg sq-electric">⚡ 電撃</span>
+      <span class="leg sq-reversal">🔄 逆転</span>
+      <span class="leg sq-king">👑 王様</span>
+      <span class="leg sq-warp">🌀 ワープ</span>
+      <span class="leg sq-death">💀 デス</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== イベントモーダル ====== -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="m-icon"  id="m-icon"></div>
+    <div class="m-type"  id="m-type"></div>
+    <div class="m-title" id="m-title"></div>
+    <div class="m-body"  id="m-body"></div>
+    <!-- クイズ正解エリア（クイズマス時のみ表示） -->
+    <div class="m-answer" id="m-answer" style="display:none">
+      <div class="m-answer-label">✅ 正解はこちら</div>
+      <div class="m-answer-text" id="m-answer-text"></div>
+    </div>
+    <div class="m-btn-row">
+      <button class="m-btn" id="m-btn" onclick="modalBtnPrimary()">わかった！</button>
+      <button class="m-btn m-btn-safe" id="m-btn2" onclick="closeModal()" style="display:none">全員セーフ 🙌</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 勝利画面 ====== -->
+<div id="victory">
+  <div class="v-emoji">🎉</div>
+  <div class="v-title" id="v-title"></div>
+  <div class="v-sub"   id="v-sub"></div>
+  <button class="v-btn" onclick="resetGame()">もう一回遊ぶ！</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

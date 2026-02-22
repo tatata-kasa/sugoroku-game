@@ -1,0 +1,367 @@
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);
+  min-height:100vh;color:#fff;overflow:hidden;
+}
+
+/* ===== KEYFRAMES ===== */
+@keyframes titleShine{to{background-position:200% center}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes victoryPop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes vBounce{from{transform:translateY(0)}to{transform:translateY(-22px)}}
+@keyframes diceRoll{
+  0%{transform:rotate(0) scale(1)}
+  20%{transform:rotate(-20deg) scale(1.2)}
+  40%{transform:rotate(14deg) scale(.88)}
+  60%{transform:rotate(-10deg) scale(1.1)}
+  80%{transform:rotate(5deg) scale(.95)}
+  100%{transform:rotate(0) scale(1)}
+}
+@keyframes numPop{
+  0%{transform:scale(.3) rotate(-15deg);opacity:0}
+  70%{transform:scale(1.15) rotate(3deg);opacity:1}
+  100%{transform:scale(1) rotate(0);opacity:1}
+}
+@keyframes sqPulse{
+  0%{box-shadow:0 0 0 2px #FFD700,0 0 8px rgba(255,215,0,.6),inset 0 0 0 1px rgba(255,215,0,.3)}
+  100%{box-shadow:0 0 0 3px #FFD700,0 0 20px rgba(255,215,0,.95),inset 0 0 0 1px rgba(255,215,0,.5)}
+}
+@keyframes tokenBounce{
+  from{transform:translateY(0) scale(1)}
+  to{transform:translateY(-5px) scale(1.2)}
+}
+@keyframes sqFlash{
+  0%{filter:brightness(1.9);transform:scale(1.08)}
+  100%{filter:brightness(1);transform:scale(1)}
+}
+@keyframes cFall{to{transform:translateY(110vh) rotate(900deg);opacity:0}}
+@keyframes screenFlash{
+  0%{opacity:.88}
+  100%{opacity:0}
+}
+
+/* ===== SETUP SCREEN ===== */
+#setup{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100vh;padding:20px;
+}
+.game-title{
+  font-size:2.8rem;font-weight:900;text-align:center;margin-bottom:6px;
+  background:linear-gradient(45deg,#FF6B35,#FFD700,#FF6B6B,#FF6B35);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;animation:titleShine 3s linear infinite;
+}
+.game-sub{font-size:.9rem;opacity:.65;text-align:center;margin-bottom:28px;letter-spacing:.05em}
+.setup-card{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.2);border-radius:22px;
+  padding:26px 22px;width:100%;max-width:420px;
+}
+.setup-label{font-size:.75rem;opacity:.6;text-align:center;margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase}
+.count-row{display:flex;gap:8px;justify-content:center;margin-bottom:22px}
+.cnt-btn{
+  width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  background:transparent;color:#fff;font-size:1.1rem;font-weight:bold;cursor:pointer;
+  transition:all .2s;
+}
+.cnt-btn.on{background:#FF6B35;border-color:#FF6B35;transform:scale(1.12)}
+.p-inputs{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.p-row{display:flex;align-items:center;gap:10px}
+.p-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0}
+.p-input{
+  flex:1;padding:11px 14px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);
+  color:#fff;font-size:.95rem;
+}
+.p-input::placeholder{color:rgba(255,255,255,.4)}
+.p-input:focus{outline:none;border-color:#FF6B35;background:rgba(255,107,53,.12)}
+.start-btn{
+  width:100%;padding:15px;border-radius:16px;border:none;
+  background:linear-gradient(135deg,#FF6B35,#FF8E53);color:#fff;
+  font-size:1.1rem;font-weight:bold;cursor:pointer;
+  box-shadow:0 4px 20px rgba(255,107,53,.4);transition:transform .15s;
+}
+.start-btn:active{transform:scale(.97)}
+
+/* ===== GAME SCREEN ===== */
+/* 5×6 螺旋ボード + サイドパネルの横並びレイアウト */
+#game{
+  display:none;flex-direction:row;align-items:center;justify-content:center;
+  gap:14px;padding:8px;
+  position:fixed;inset:0;overflow:hidden;
+}
+
+/* ===== BOARD: 5列×6行 螺旋ルートグリッド ===== */
+/*
+  螺旋可視化 (sq番号):
+    [00] [01] [02] [03] [04]
+    [17] [18] [19] [20] [05]
+    [16] [27] [28] [21] [06]
+    [15] [26] [29] [22] [07]
+    [14] [25] [24] [23] [08]
+    [13] [12] [11] [10] [09]
+  START=sq0(左上), GOAL=sq29(中央)
+*/
+.board{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  grid-template-rows:repeat(6,1fr);
+  gap:4px;
+  padding:6px;
+  /* 5:6 アスペクト比を維持し、画面高さに合わせる */
+  width:min(44vw, calc(92vh * 5 / 6));
+  aspect-ratio:5/6;
+  flex-shrink:0;
+  /* ボードゲーム風デザイン */
+  background:linear-gradient(145deg,#0d2137 0%,#1a3a52 60%,#0f2d42 100%);
+  border:5px solid #C8A951;
+  border-radius:14px;
+  box-shadow:
+    0 0 0 2px rgba(200,169,81,.25),
+    0 0 50px rgba(200,169,81,.2),
+    0 8px 40px rgba(0,0,0,.6),
+    inset 0 0 80px rgba(0,0,0,.35);
+}
+
+/* ===== サイドパネル（ゲームコントロール）===== */
+.side-panel{
+  flex-shrink:0;
+  width:clamp(200px,28vw,320px);
+  /* ボードと同じ高さに合わせる */
+  height:min(92vh, calc(44vw * 6 / 5));
+  background:rgba(5,18,35,.85);
+  border:2px solid rgba(200,169,81,.4);
+  border-radius:14px;
+  box-shadow:0 0 30px rgba(0,0,0,.4),inset 0 0 40px rgba(0,0,0,.3);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:space-evenly;
+  padding:12px 14px;
+  overflow:hidden;
+}
+.center-game-title{
+  font-size:clamp(.9rem,1.9vmin,1.3rem);font-weight:900;
+  background:linear-gradient(45deg,#FF6B35,#FFD700,#FF6B6B,#FF6B35);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;animation:titleShine 3s linear infinite;
+  white-space:nowrap;letter-spacing:.03em;
+}
+
+/* ===== SQUARE ===== */
+.sq{
+  border-radius:5px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  border:1.5px solid rgba(255,255,255,.22);
+  min-width:0;min-height:0;
+}
+
+/* マス番号ラベル (左上) */
+.sq-lbl{
+  position:absolute;top:2px;left:3px;
+  font-size:clamp(.38rem,.85vmin,.62rem);
+  font-weight:700;opacity:.85;line-height:1;
+  white-space:nowrap;
+}
+
+/* 方向矢印 (右上) */
+.sq-dir{
+  position:absolute;top:2px;right:3px;
+  font-size:clamp(.38rem,.8vmin,.6rem);
+  font-weight:900;opacity:.55;line-height:1;
+  pointer-events:none;
+}
+
+/* 絵文字アイコン (中央) */
+.sq-ico{font-size:clamp(1.1rem,4.5vmin,2.4rem);line-height:1.1}
+
+/* コマ表示エリア (下部) */
+.sq-tokens{
+  position:absolute;bottom:2px;left:1px;right:1px;
+  display:flex;flex-wrap:wrap;gap:1px;justify-content:center;
+}
+
+/* コマ: 大きくして存在感アップ */
+.token{
+  width:clamp(16px,3.8vmin,38px);height:clamp(16px,3.8vmin,38px);
+  border-radius:50%;border:2px solid rgba(255,255,255,.95);
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(.42rem,1vmin,.72rem);font-weight:bold;color:#fff;flex-shrink:0;
+  transition:transform .15s;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.token.active-token{
+  animation:tokenBounce .5s ease-in-out infinite alternate;
+  /* プレイヤー固有色のグロー */
+  box-shadow:0 0 8px 3px var(--tok-color,rgba(255,255,255,.8)),
+             0 0 18px rgba(255,255,255,.4);
+  z-index:5;
+}
+
+/* 現在プレイヤーのマスをゴールドパルスでハイライト */
+.sq-cur-hl{
+  animation:sqPulse 1s ease-in-out infinite alternate;
+  z-index:2;
+}
+
+/* コマ通過時フラッシュ */
+.sq-step-flash{animation:sqFlash .22s ease-out}
+
+/* START/GOAL の強調 */
+.sq-start .sq-lbl,
+.sq-goal  .sq-lbl{font-size:clamp(.44rem,.95vmin,.68rem);font-weight:900;opacity:1}
+.sq-start .sq-ico,
+.sq-goal  .sq-ico{font-size:clamp(1.3rem,5.5vmin,2.8rem)}
+
+/* ===== マスのカラー ===== */
+.sq-start    {background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.sq-goal     {background:linear-gradient(135deg,#FFD700,#FFA500);color:#333}
+.sq-drink    {background:linear-gradient(135deg,#ff8a8a,#ff4d4d);color:#fff}
+.sq-all_drink{background:linear-gradient(135deg,#ffd1a1,#ff8c42);color:#fff}
+.sq-quiz     {background:linear-gradient(135deg,#ffe066,#fab005);color:#333}
+.sq-game     {background:linear-gradient(135deg,#d8b4fe,#9333ea);color:#fff}
+.sq-advance  {background:linear-gradient(135deg,#86efac,#22c55e);color:#fff}
+.sq-retreat  {background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#333}
+
+/* 特殊マス */
+.sq-electric {background:linear-gradient(135deg,#FEF08A,#EAB308);color:#333}
+.sq-reversal {background:linear-gradient(135deg,#67E8F9,#06B6D4);color:#fff}
+.sq-king     {background:linear-gradient(135deg,#FCD34D,#D97706);color:#fff}
+.sq-warp     {background:linear-gradient(135deg,#C4B5FD,#7C3AED);color:#fff}
+.sq-death    {background:linear-gradient(135deg,#6B7280,#111827);color:#fff}
+
+/* ゴール前エリア（sq24-sq28）: 赤みのある枠線＋内側グロー */
+.sq-endzone{
+  border-color:rgba(255,80,50,.75) !important;
+  box-shadow:inset 0 0 10px rgba(255,30,0,.18),0 0 6px rgba(255,80,50,.35);
+}
+
+/* 画面フラッシュエフェクト */
+.screen-flash{
+  position:fixed;inset:0;
+  z-index:999;pointer-events:none;
+  animation:screenFlash .65s ease-out forwards;
+}
+
+/* ===== プレイヤーバー ===== */
+.pbar{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;width:100%}
+.pchip{
+  display:flex;flex-direction:column;align-items:center;
+  padding:4px 8px;border-radius:14px;
+  background:rgba(255,255,255,.1);border:2px solid transparent;
+  min-width:52px;transition:all .3s;
+}
+.pchip.cur{border-color:#FFD700;background:rgba(255,215,0,.15)}
+.pchip-dot{width:8px;height:8px;border-radius:50%;margin-bottom:2px}
+.pchip-name{
+  font-size:clamp(.56rem,1.1vmin,.7rem);font-weight:bold;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px;
+}
+.pchip-pos{font-size:clamp(.48rem,.92vmin,.6rem);opacity:.65}
+
+/* ===== ターン情報 ===== */
+.turn-info{font-size:clamp(.82rem,1.75vmin,1.05rem);font-weight:bold;text-align:center}
+.turn-name{color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,.55)}
+
+/* ===== サイコロ行 ===== */
+.dice-row{display:flex;align-items:center;gap:14px}
+.dice{
+  width:clamp(40px,5.5vmin,58px);height:clamp(40px,5.5vmin,58px);
+  background:#fff;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(1.3rem,3vmin,2rem);
+  cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.35);
+  user-select:none;-webkit-user-select:none;transition:transform .1s;
+}
+.dice:active{transform:scale(.88)}
+.dice.rolling{animation:diceRoll .55s ease-out}
+.dice-result-box{display:flex;flex-direction:column;align-items:center;min-width:48px}
+.dice-result-num{
+  font-size:clamp(1.8rem,4.2vmin,2.8rem);font-weight:900;line-height:1;
+  color:#FFD700;text-shadow:0 2px 10px rgba(0,0,0,.5);
+  min-height:2.2rem;display:flex;align-items:center;justify-content:center;
+}
+.dice-result-num.pop{animation:numPop .4s cubic-bezier(.34,1.56,.64,1)}
+.dice-result-label{font-size:clamp(.48rem,.95vmin,.62rem);opacity:.7;font-weight:600;letter-spacing:.04em}
+
+/* ロールボタン */
+.roll-btn{
+  padding:clamp(7px,1.2vmin,12px) clamp(18px,2.8vmin,28px);
+  border-radius:28px;border:none;
+  background:linear-gradient(135deg,#FF6B35,#FF8E53);color:#fff;
+  font-size:clamp(.76rem,1.55vmin,.95rem);font-weight:bold;cursor:pointer;
+  box-shadow:0 4px 16px rgba(255,107,53,.4);transition:all .15s;
+  white-space:nowrap;
+}
+.roll-btn:active{transform:scale(.95)}
+.roll-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ===== 凡例 ===== */
+.legend{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;width:100%}
+.leg{
+  font-size:clamp(.44rem,.95vmin,.65rem);
+  padding:2px 6px;border-radius:7px;
+  opacity:.9;display:flex;align-items:center;gap:2px;font-weight:600;
+}
+
+/* ===== イベントモーダル ===== */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:100;align-items:flex-end;justify-content:center;
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:#fff;border-radius:24px 24px 0 0;
+  padding:28px 22px 44px;width:100%;max-width:480px;
+  color:#222;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1);
+}
+.m-icon{font-size:3.8rem;text-align:center;margin-bottom:10px}
+.m-type{font-size:.75rem;font-weight:700;text-align:center;letter-spacing:.12em;opacity:.5;margin-bottom:6px}
+.m-title{font-size:1.45rem;font-weight:900;text-align:center;margin-bottom:10px;line-height:1.3}
+.m-body{font-size:1rem;text-align:center;line-height:1.6;margin-bottom:22px;color:#555}
+
+/* クイズ正解エリア */
+.m-answer{
+  background:#f0fdf4;border:2px solid #22c55e;border-radius:12px;
+  padding:12px 16px;margin-bottom:16px;
+}
+.m-answer-label{font-size:.7rem;font-weight:700;color:#16a34a;margin-bottom:4px;letter-spacing:.06em}
+.m-answer-text{font-size:1.05rem;font-weight:900;color:#166534;line-height:1.4}
+
+.m-btn-row{display:flex;flex-direction:column;gap:10px}
+.m-btn{
+  width:100%;padding:14px;border-radius:14px;border:none;
+  font-size:1rem;font-weight:bold;cursor:pointer;color:#fff;transition:transform .15s;
+}
+.m-btn:active{transform:scale(.97)}
+.m-btn-safe{background:#51cf66 !important}
+
+/* ===== 勝利画面 ===== */
+#victory{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:linear-gradient(135deg,#1a1a2e,#0f3460);
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;
+}
+#victory.show{display:flex;animation:victoryPop .5s ease-out}
+.v-emoji{font-size:5rem;animation:vBounce 1s ease-in-out infinite alternate}
+.v-title{
+  font-size:2rem;font-weight:900;margin:18px 0 10px;line-height:1.25;
+  background:linear-gradient(45deg,#FFD700,#FF6B35,#FF6B6B);
+  background-size:200% auto;-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+  animation:titleShine 2s linear infinite;
+}
+.v-sub{font-size:1.05rem;opacity:.8;margin-bottom:32px;line-height:1.5}
+.v-btn{
+  padding:15px 44px;border-radius:30px;border:none;
+  background:linear-gradient(135deg,#FF6B35,#FF8E53);color:#fff;
+  font-size:1.05rem;font-weight:bold;cursor:pointer;
+  box-shadow:0 4px 20px rgba(255,107,53,.5);
+}
+
+/* ===== 紙吹雪 ===== */
+.confetti{position:fixed;pointer-events:none;animation:cFall linear forwards}
