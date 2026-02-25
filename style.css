@@ -431,6 +431,77 @@ body{
 /* ===== 紙吹雪 ===== */
 .confetti{position:fixed;pointer-events:none;animation:cFall linear forwards}
 
+/* ===== スマホ縦向き対応 ===== */
+@media (orientation:portrait) and (max-width:600px){
+
+  /* ゲーム画面: 縦並びに切り替え */
+  #game{
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:4px 6px;
+    gap:6px;
+    overflow-y:auto;   /* ボタンが見切れないようスクロール可能に */
+  }
+
+  /* ボード: 幅いっぱいに広げる、高さ制限も緩和 */
+  .board{
+    width:min(96vw,46vh);
+    gap:14px;
+    padding:8px;
+    border-width:4px;
+    flex-shrink:0;
+  }
+
+  /* サイドパネル: ボードと同幅で縦スタック */
+  .side-panel{
+    width:min(96vw,46vh);
+    height:auto;
+    min-height:0;
+    flex-direction:column;
+    justify-content:flex-start;
+    padding:7px 9px;
+    gap:6px;
+    overflow:visible;
+  }
+
+  /* タイトルは省略してスペース節約 */
+  .center-game-title{display:none}
+
+  /* プレイヤーバー: 横スクロール1行に変更 */
+  .pbar{
+    flex-direction:row;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:4px;
+    padding-bottom:3px;
+  }
+  .pchip{flex-shrink:0;min-width:88px;padding:5px 7px;gap:5px}
+  .pchip-dot{width:10px;height:10px}
+  .pchip-name{font-size:.72rem}
+  .pchip-pos{font-size:.58rem}
+  .pchip-drink{font-size:.6rem}
+
+  /* ターン情報 */
+  .turn-info{font-size:.88rem}
+
+  /* サイコロ */
+  .dice{
+    width:clamp(44px,11vw,58px);
+    height:clamp(44px,11vw,58px);
+    font-size:clamp(1.8rem,7.5vw,2.5rem);
+  }
+  .dice-result-num{font-size:clamp(1.4rem,5.5vw,1.9rem);min-height:1.8rem}
+
+  /* ロールボタン: 横幅いっぱい */
+  .roll-btn{width:100%;padding:10px;font-size:.9rem}
+
+  /* 凡例: コンパクト */
+  .legend{gap:3px}
+  .leg{font-size:.44rem;padding:1px 4px}
+}
+
 /* ===== スマホ横向き対応 ===== */
 @media (orientation:landscape) and (max-height:520px){
 
