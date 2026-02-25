@@ -214,6 +214,22 @@ let numPlayers     = 3;
     });
   });
   buildInputs();
+
+  // 画面回転・モバイルUIの表示/非表示でSVGルート矢印を再描画
+  let _rsvgTimer = null;
+  function redrawRouteOnResize(){
+    clearTimeout(_rsvgTimer);
+    _rsvgTimer = setTimeout(() => {
+      if(!G.over && document.getElementById('game').style.display !== 'none'){
+        requestAnimationFrame(() => renderRouteSVG(G.positions[G.cur]));
+      }
+    }, 120);
+  }
+  window.addEventListener('resize', redrawRouteOnResize);
+  // iOS Safari はvisualViewportのresizeが信頼性高い
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', redrawRouteOnResize);
+  }
 })();
 
 function buildInputs(){
@@ -334,8 +350,8 @@ function renderBoard(){
   });
 
   renderTokens();
-  // レイアウト確定後にSVGルートを描画
-  requestAnimationFrame(() => renderRouteSVG());
+  // レイアウト確定後にSVGルートを描画（double RAF でCSSグリッド計算の完了を待つ）
+  requestAnimationFrame(() => requestAnimationFrame(() => renderRouteSVG()));
 }
 
 // ===== SVG ルート線 & 矢印 =====
@@ -349,6 +365,12 @@ function renderRouteSVG(curPos = -1){
   const boardRect = board.getBoundingClientRect();
   if(boardRect.width === 0) return;
 
+  // SVGは position:absolute;inset:0 なので padding-edge(=border内側)が原点
+  // getBoundingClientRect は border-edge を返すため border幅を引いて補正する
+  const bs = getComputedStyle(board);
+  const bLeft = parseFloat(bs.borderLeftWidth) || 0;
+  const bTop  = parseFloat(bs.borderTopWidth)  || 0;
+
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.id = 'route-svg';
@@ -356,15 +378,15 @@ function renderRouteSVG(curPos = -1){
   svg.setAttribute('height', '100%');
   svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:visible;';
 
-  // 各マスの中心座標（ボード相対）
+  // 各マスの中心座標（ボード内部・SVG座標系）
   const pts = [];
   for(let i = 0; i < TOTAL; i++){
     const el = document.getElementById(`sq${i}`);
     if(!el){ pts.push(null); continue; }
     const r = el.getBoundingClientRect();
     pts.push({
-      x: r.left - boardRect.left + r.width  / 2,
-      y: r.top  - boardRect.top  + r.height / 2,
+      x: r.left - boardRect.left - bLeft + r.width  / 2,
+      y: r.top  - boardRect.top  - bTop  + r.height / 2,
     });
   }
 
