@@ -2,52 +2,49 @@
 const COLORS = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#C3A6FF','#FBBF24'];
 const FACES  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
-// 30マス構成: index 0=START, 1-28=イベント(28マス), 29=GOAL
-const TOTAL = 30;
-const GOAL  = 29;
+// 25マス構成: index 0=START, 1-23=イベント(23マス), 24=GOAL
+const TOTAL = 25;
+const GOAL  = 24;
 
-// ===== SPIRAL LAYOUT (5列×6行グリッド) =====
+// ===== SPIRAL LAYOUT (5列×5行グリッド) =====
 //
 //  グリッド可視化 (sq番号):
 //    [00] [01] [02] [03] [04]
-//    [17] [18] [19] [20] [05]
-//    [16] [27] [28] [21] [06]
-//    [15] [26] [29] [22] [07]
-//    [14] [25] [24] [23] [08]
-//    [13] [12] [11] [10] [09]
+//    [15] [16] [17] [18] [05]
+//    [14] [23] [24] [19] [06]
+//    [13] [22] [21] [20] [07]
+//    [12] [11] [10] [09] [08]
 //
 //  螺旋ルート: 外周 → 内周 → 中央(GOAL)
 //    Ring1: sq0(START,左上)→右→下→左→上
-//    Ring2: sq18→右→下→左→上
-//    Center: sq28→sq29(GOAL,中央)
+//    Ring2: sq16→右→下→左→上
+//    Center: sq24(GOAL,中央)
 //
 const SQUARE_POS = [
   // Ring 1 outer
   {r:1,c:1},{r:1,c:2},{r:1,c:3},{r:1,c:4},{r:1,c:5}, // sq0-4  上辺 →
-  {r:2,c:5},{r:3,c:5},{r:4,c:5},{r:5,c:5},{r:6,c:5}, // sq5-9  右辺 ↓
-  {r:6,c:4},{r:6,c:3},{r:6,c:2},{r:6,c:1},           // sq10-13 下辺 ←
-  {r:5,c:1},{r:4,c:1},{r:3,c:1},{r:2,c:1},           // sq14-17 左辺 ↑
+  {r:2,c:5},{r:3,c:5},{r:4,c:5},{r:5,c:5},           // sq5-8  右辺 ↓
+  {r:5,c:4},{r:5,c:3},{r:5,c:2},{r:5,c:1},           // sq9-12 下辺 ←
+  {r:4,c:1},{r:3,c:1},{r:2,c:1},                     // sq13-15 左辺 ↑
   // Ring 2 inner
-  {r:2,c:2},{r:2,c:3},{r:2,c:4},                     // sq18-20 内上辺 →
-  {r:3,c:4},{r:4,c:4},{r:5,c:4},                     // sq21-23 内右辺 ↓
-  {r:5,c:3},{r:5,c:2},                               // sq24-25 内下辺 ←
-  {r:4,c:2},{r:3,c:2},                               // sq26-27 内左辺 ↑
+  {r:2,c:2},{r:2,c:3},{r:2,c:4},                     // sq16-18 内上辺 →
+  {r:3,c:4},{r:4,c:4},                               // sq19-20 内右辺 ↓
+  {r:4,c:3},{r:4,c:2},                               // sq21-22 内下辺 ←
+  {r:3,c:2},                                         // sq23   内左辺 ↑
   // Center
-  {r:3,c:3},                                         // sq28
-  {r:4,c:3},                                         // sq29 GOAL（中央）
+  {r:3,c:3},                                         // sq24 GOAL（中央）
 ];
 
 // 方向矢印: 次のマスへ向かう方向を示す
 const SQUARE_DIR = [
-  '→','→','→','→','↓',  // sq0-4   上辺(右端で折れる)
-  '↓','↓','↓','↓','←',  // sq5-9   右辺(下端で折れる)
-  '←','←','←','↑',      // sq10-13 下辺(左端で折れる)
-  '↑','↑','↑','→',       // sq14-17 左辺(上端で内周へ)
-  '→','→','↓',           // sq18-20 内上辺
-  '↓','↓','←',           // sq21-23 内右辺
-  '←','↑',               // sq24-25 内下辺
-  '↑','→',               // sq26-27 内左辺
-  '↓','',                // sq28-29 中央(GOALは矢印なし)
+  '→','→','→','→','↓',    // sq0-4   上辺(右端で折れる)
+  '↓','↓','↓','←',        // sq5-8   右辺(下端で折れる)
+  '←','←','←','↑',        // sq9-12  下辺(左端で折れる)
+  '↑','↑','→',            // sq13-15 左辺(上端で内周へ)
+  '→','→','↓',            // sq16-18 内上辺
+  '↓','←',               // sq19-20 内右辺
+  '←','↑',               // sq21-22 内下辺
+  '→','',                 // sq23-24 中央へ(GOALは矢印なし)
 ];
 
 // ===== EVENT DATA =====
@@ -97,40 +94,81 @@ const ALL_DRINK = [
 
 // クイズデータ（問題 q、正解 a）
 const QUIZ = [
-  {q:'日本で一番高い山は？',                          a:'富士山（3,776m）'},
-  {q:'ビールの主な原料は何？（4つ答えよ）',            a:'麦芽・ホップ・水・酵母'},
-  {q:'サッカーワールドカップは何年に1度開催される？',   a:'4年に1度'},
-  {q:'カルピスの原液を水で薄める推奨比率は？',          a:'1:4（原液1：水4）'},
-  {q:'東京タワーの高さは何メートル？',                 a:'333m'},
-  {q:'ウォッカの主な原産国はどこ？',                   a:'ロシア'},
-  {q:'「乾杯」を英語で言うと？',                       a:'Cheers！（チアーズ）'},
-  {q:'日本酒の主な原料は？（3つ）',                   a:'米・水・麹（こうじ）'},
-  {q:'世界で最もビール消費量が多い国は？（2024年）',    a:'中国'},
-  {q:'テキーラの原料となる植物の名前は？',              a:'アガベ（竜舌蘭）'},
-  {q:'シャンパンはどこの国のどの地方のお酒？',          a:'フランス・シャンパーニュ地方'},
-  {q:'ビールの度数は一般的に何%くらい？',              a:'約4〜6%'},
-  {q:'「いただきます」を英語で言うと？',                a:'Enjoy your meal / Let\'s eat!'},
-  {q:'マルガリータカクテルの主な材料を3つ答えよ',       a:'テキーラ・ライムジュース・トリプルセック'},
-  {q:'日本でお酒が飲めるのは何歳から？',                a:'20歳以上（未成年飲酒は禁止！）'},
-  {q:'世界で最も消費されている蒸留酒は？',              a:'バイジュー（白酒）— 中国のお酒'},
+  // ── お酒・飲み物 ──
+  {q:'ビールの主な原料を4つ答えよ',                         a:'麦芽・ホップ・水・酵母'},
+  {q:'日本酒の主な原料は？（3つ）',                         a:'米・水・麹（こうじ）'},
+  {q:'テキーラの原料となる植物の名前は？',                   a:'アガベ（竜舌蘭）'},
+  {q:'シャンパンはどこの国のどの地方のお酒？',               a:'フランス・シャンパーニュ地方'},
+  {q:'ウォッカの主な原産国はどこ？',                         a:'ロシア'},
+  {q:'マルガリータカクテルの主な材料を3つ答えよ',             a:'テキーラ・ライムジュース・トリプルセック'},
+  {q:'カルピスの原液を水で薄める推奨比率は？',               a:'1:4（原液1：水4）'},
+  {q:'世界で最もビール消費量が多い国は？（2024年）',          a:'中国'},
+  {q:'ハイボールは何と何を混ぜたもの？',                     a:'ウイスキー＋炭酸水'},
+  {q:'ワインの主な原料は？',                                a:'ぶどう'},
+  {q:'「角」と言えば何のブランドのウイスキー？',              a:'サントリー（角瓶）'},
+  {q:'ビールの度数は一般的に何%くらい？',                    a:'約4〜6%'},
+  {q:'世界で最も消費されている蒸留酒は？',                   a:'バイジュー（白酒）— 中国のお酒'},
+  {q:'「乾杯」を英語・フランス語・ドイツ語それぞれで言うと？', a:'Cheers / Santé（サンテ）/ Prost（プロースト）'},
+  {q:'ビールの泡の役割を1つ答えよ',                         a:'香りを閉じ込める・酸化防止・口当たりまろやか など'},
+  // ── 日本・一般常識 ──
+  {q:'日本で一番高い山は？',                                a:'富士山（3,776m）'},
+  {q:'東京タワーの高さは何メートル？',                       a:'333m'},
+  {q:'東京の旧名は？',                                     a:'江戸（えど）'},
+  {q:'日本でお酒が飲めるのは何歳から？',                     a:'20歳以上（未成年飲酒禁止！）'},
+  {q:'日本の国旗は何色と何色？',                            a:'白と赤'},
+  {q:'日本のコンビニは全国に何万店くらい？（2024年）',        a:'約5万5千店'},
+  {q:'「ありがとう」の語源の意味は？',                       a:'有り難い（めったにない）という意味'},
+  {q:'人間の体で最も大きな臓器は？',                        a:'皮膚（肝臓と答えがち！）'},
+  {q:'光の速さは秒速何km？',                                a:'約30万km（299,792km）'},
+  {q:'日本で不吉とされる数字は？（2つ）',                    a:'4（し＝死）と9（く＝苦）'},
+  // ── 食べ物 ──
+  {q:'チーズの主な原料は？',                                a:'牛乳'},
+  {q:'カレーはもともとどの国の料理？',                       a:'インド'},
+  {q:'味噌の原料を答えよ',                                  a:'大豆・塩・麹'},
+  {q:'コーラを最初に作った国は？',                          a:'アメリカ'},
+  {q:'ラーメンの語源はどの言語から？',                       a:'中国語の拉麺（ラーミエン）'},
+  // ── スポーツ ──
+  {q:'サッカーワールドカップは何年に1度？',                   a:'4年に1度'},
+  {q:'サッカーの1チームのフィールドプレイヤー数は？',          a:'11人（GK含む）'},
+  {q:'オリンピックの五輪の5色をすべて答えよ',                a:'青・黄・黒・緑・赤（白地含め5色）'},
+  {q:'バスケットボールのゴールの高さは？',                   a:'3.05m（10フィート）'},
+  // ── エンタメ ──
+  {q:'世界で一番売れたゲームソフトは？（2024年）',            a:'マインクラフト（約2.4億本以上）'},
+  {q:'「ONE PIECE」の主人公は？',                           a:'モンキー・D・ルフィ'},
+  {q:'ドラゴンボールの主人公は？',                          a:'孫悟空（そんごくう）'},
+  // ── ちょっと難しめ ──
+  {q:'じゃんけんで「グー」を3回連続で出す確率は？',           a:'1/27（約3.7%）'},
+  {q:'「いただきます」を英語で言うと？',                     a:'Enjoy your meal / Let\'s eat!'},
+  {q:'円周率πを小数点2位まで答えよ',                        a:'3.14'},
 ];
 
 const GAME = [
+  // ── じゃんけん系（結果が一目瞭然）──
   {body:'隣の人とじゃんけん！負けた方が飲む！あいこは両者飲む！'},
-  {body:'全員で同時に好きな食べ物を言え！被った人全員が飲む！'},
-  {body:'時計回りで1から数を数えよ。3の倍数で「飲む！」と叫べ。間違えた人が1杯！'},
-  {body:'全員でグーチョキパーを同時に出せ。一人だけ違う手の人が飲む！'},
-  {body:'全員で「乾杯！」と言え！声が一番小さかった人が飲む！'},
-  {body:'今日一番テンション高かった人を全員で同時に指させ。最多得票の人が飲む！'},
-  {body:'右隣の人に「ありがとう」か「ごめん」を選んで理由付きで言え。言えなかったら1杯！'},
-  {body:'全員で好きな芸能人/推しを同時に言え！被ったペアは一緒に飲む！'},
+  {body:'全員でじゃんけん！最後まで残った1人だけセーフ！他は全員飲む！'},
+  {body:'隣の人とあっち向いてホイ！負けた人が飲む！'},
+  // ── 同時宣言系（進行役不要・自動判定）──
+  {body:'全員で同時に好きな食べ物を言え！被った人が飲む！'},
+  {body:'全員で同時に好きな季節を言え！（春夏秋冬）一人だけ違う季節の人が飲む！'},
+  {body:'全員で同時に好きな芸能人・推しを言え！被ったペアは一緒に乾杯！'},
+  {body:'全員で同時に「今一番食べたいもの」を言え！被った人が飲む！'},
+  {body:'全員で今の気分を天気で言え！（晴れ/曇り/雨/嵐）一番暗い天気の人が飲む！'},
+  {body:'全員で「1」か「2」を同時に言え！少数派が飲む！（同数ならじゃんけんで決定）'},
+  {body:'全員で同時に好きな動物を言え！被ったペアは一緒に飲む！'},
+  // ── 指・ジェスチャー系 ──
+  {body:'全員でグーチョキパーを同時に出せ！一人だけ違う手を出した人が飲む！'},
+  {body:'全員で0〜5本の指を同時に出せ！合計が奇数なら最多、偶数なら最少を出した人が飲む！'},
+  // ── スマホ・モノ系（客観的な数字）──
+  {body:'今すぐスマホのバッテリー残量を全員に見せろ！一番少ない人が1杯！'},
+  // ── 身体・アクション系 ──
+  {body:'全員でグラスを同時に持ち上げて乾杯！最後に上げた人が飲む！'},
+  {body:'早口言葉「生麦生米生卵」を3回！噛んだら飲む！（時計回りで全員挑戦）'},
   {body:'利き手と逆の手でコップを持って飲む！こぼしたらもう1杯！'},
-  {body:'30秒間、全員でできるだけ真顔でいろ！笑ったり微笑んだりした人が1杯！'},
-  {body:'スマホの写真フォルダを右から5枚目を全員に見せる。嫌なら飲む！'},
-  {body:'隣の人と10秒以内に握手して相手の名前を呼び合え。失敗したら1杯！'},
-  {body:'一番最近ドラマ・映画を見た人が飲む！'},
-  {body:'左隣の人に本気の褒め言葉を言う。言えなかったら飲む！'},
-  {body:'全員でスマホを裏向きに置く。最初に触った人が飲む！（次の人のターン終了まで）'},
+  // ── お題・あるある系 ──
+  {body:'今日一番テンション高かった人を全員で同時に指させ！最多得票の人が飲む！'},
+  {body:'一番最近ドラマ・映画・アニメを見た人が飲む！'},
+  {body:'右隣の人に「ありがとう」か「ごめん」を選んで理由付きで言え！言えなかったら1杯！'},
+  {body:'「今日ここに来る前にしてたこと」を全員で同時に言え！一番地味なことをしてた人が飲む！'},
 ];
 
 const ADVANCE = [
@@ -160,9 +198,10 @@ let G = {
   squares:[], rolling:false, over:false,
 };
 let modalCb    = null;
-let modalMode  = 'normal'; // 'normal' | 'quiz-q' | 'quiz-a'
-let quizAnswer = '';
-let numPlayers = 3;
+let modalMode      = 'normal'; // 'normal' | 'quiz-q' | 'quiz-a' | 'drink-select'
+let quizAnswer     = '';
+let drinkSelectCb  = null;
+let numPlayers     = 3;
 
 // ===== INIT =====
 (function init(){
@@ -197,6 +236,7 @@ function startGame(){
     .map((el, i) => el.value.trim() || `プレイヤー${i+1}`);
   G.players   = names.map((name, i) => ({ name, color: COLORS[i] }));
   G.positions = new Array(names.length).fill(0);
+  G.drinks  = new Array(names.length).fill(0);
   G.cur     = 0;
   G.rolling = false;
   G.over    = false;
@@ -207,6 +247,7 @@ function startGame(){
   document.getElementById('dice').textContent = '🎲';
   document.getElementById('dice-num').textContent = '-';
   document.getElementById('dice-num').classList.remove('pop');
+  document.getElementById('dice').textContent = '🎲';
 
   renderBoard();
   renderBar();
@@ -215,27 +256,23 @@ function startGame(){
 
 // ===== MAKE SQUARES =====
 // 配分:
-//   endZone (sq24-28, 5マス): drink×2 + all_drink×1 + game×1 + death×1
-//   pool (sq1-23, 23マス): drink×4 + all_drink×1 + quiz×5 + game×5
-//                          + advance×2 + retreat×2
-//                          + electric×1 + reversal×1 + king×1 + warp×1
-//   合計 pool: 4+1+5+5+2+2+1+1+1+1 = 23 ✓
-//   合計 drink: pool:4 + endZone:2 = 6 ✓
+//   endZone (sq21-23, 3マス): drink×1 + all_drink×1 + death×1
+//   pool (sq1-20, 20マス): drink×3 + all_drink×1 + quiz×5 + game×6
+//                          + advance×2 + retreat×1 + king×1 + warp×1
+//   合計 pool: 3+1+5+6+2+1+1+1 = 20 ✓
 function makeSquares(){
-  // ゴール前5マスを先に確保（endZone: sq24-28）
-  const endZone = ['drink','drink','all_drink','game','death'];
+  // ゴール前3マスを先に確保（endZone: sq21-23）
+  const endZone = ['drink','all_drink','death'];
   shuffle(endZone);
 
-  // 残り23マス分のプール（sq1-23）
+  // 残り20マス分のプール（sq1-20）
   const pool = [];
-  for(let i = 0; i < 4; i++) pool.push('drink');     // 4 (endZone:2 と合計6)
-  for(let i = 0; i < 1; i++) pool.push('all_drink'); // 1 (endZone:1 と合計2)
-  for(let i = 0; i < 5; i++) pool.push('quiz');      // 5
-  for(let i = 0; i < 5; i++) pool.push('game');      // 5 (endZone:1 と合計6)
+  for(let i = 0; i < 3; i++) pool.push('drink');
+  for(let i = 0; i < 1; i++) pool.push('all_drink');
+  for(let i = 0; i < 5; i++) pool.push('quiz');
+  for(let i = 0; i < 6; i++) pool.push('game');
   for(let i = 0; i < 2; i++) pool.push('advance');
-  for(let i = 0; i < 2; i++) pool.push('retreat');
-  pool.push('electric');
-  pool.push('reversal');
+  for(let i = 0; i < 1; i++) pool.push('retreat');
   pool.push('king');
   pool.push('warp');
   shuffle(pool);
@@ -244,9 +281,9 @@ function makeSquares(){
   noAdjacentOf(pool, ['advance','retreat']);
 
   const sq = [{ type:'start', icon:'🏁' }];          // index 0  = START
-  pool.forEach(t    => sq.push({ type:t, icon:typeIcon(t) })); // index 1-23
-  endZone.forEach(t => sq.push({ type:t, icon:typeIcon(t) })); // index 24-28 ゴール前
-  sq.push({ type:'goal', icon:'🏆' });               // index 29 = GOAL
+  pool.forEach(t    => sq.push({ type:t, icon:typeIcon(t) })); // index 1-20
+  endZone.forEach(t => sq.push({ type:t, icon:typeIcon(t) })); // index 21-23 ゴール前
+  sq.push({ type:'goal', icon:'🏆' });               // index 24 = GOAL
   return sq;
 }
 
@@ -281,24 +318,160 @@ function renderBoard(){
   SQUARE_POS.forEach((pos, idx) => {
     const sq  = G.squares[idx];
     const el  = document.createElement('div');
-    const ezClass = (idx >= 24 && idx < GOAL) ? ' sq-endzone' : '';
+    const ezClass = (idx >= 21 && idx < GOAL) ? ' sq-endzone' : '';
     el.className = `sq sq-${sq.type}${ezClass}`;
     el.id = `sq${idx}`;
     el.style.gridColumn = pos.c;
     el.style.gridRow    = pos.r;
 
     const lbl = idx === 0 ? 'START' : idx === GOAL ? 'GOAL' : idx;
-    const dir = SQUARE_DIR[idx];
 
     el.innerHTML = `
       <div class="sq-lbl">${lbl}</div>
-      ${dir ? `<div class="sq-dir">${dir}</div>` : ''}
       <div class="sq-ico">${sq.icon}</div>
       <div class="sq-tokens" id="tk${idx}"></div>`;
     board.appendChild(el);
   });
 
   renderTokens();
+  // レイアウト確定後にSVGルートを描画
+  requestAnimationFrame(() => renderRouteSVG());
+}
+
+// ===== SVG ルート線 & 矢印 =====
+// curPos: 現在プレイヤーの位置（省略時=-1で全区間を等しく描画）
+// curPos以降を明るいゴールド、通過済みをダークグレーで描画
+function renderRouteSVG(curPos = -1){
+  const board = document.getElementById('board');
+  const existing = document.getElementById('route-svg');
+  if(existing) existing.remove();
+
+  const boardRect = board.getBoundingClientRect();
+  if(boardRect.width === 0) return;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.id = 'route-svg';
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:visible;';
+
+  // 各マスの中心座標（ボード相対）
+  const pts = [];
+  for(let i = 0; i < TOTAL; i++){
+    const el = document.getElementById(`sq${i}`);
+    if(!el){ pts.push(null); continue; }
+    const r = el.getBoundingClientRect();
+    pts.push({
+      x: r.left - boardRect.left + r.width  / 2,
+      y: r.top  - boardRect.top  + r.height / 2,
+    });
+  }
+
+  for(let i = 0; i < TOTAL - 1; i++){
+    const a = pts[i], b = pts[i + 1];
+    if(!a || !b) continue;
+
+    // 通過済み区間: curPos > 0 && i < curPos
+    const isPast = curPos > 0 && i < curPos;
+    // 次の1区間（最も強調）: i === curPos
+    const isNext = i === curPos;
+
+    if(isPast){
+      // 通過済み: 暗く細い線のみ（矢印なし）
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', a.x.toFixed(1));
+      line.setAttribute('y1', a.y.toFixed(1));
+      line.setAttribute('x2', b.x.toFixed(1));
+      line.setAttribute('y2', b.y.toFixed(1));
+      line.setAttribute('stroke', 'rgba(60,45,15,0.45)');
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(line);
+      continue;
+    }
+
+    // ① グロー線（アンバー）
+    const glowW = isNext ? 18 : 12;
+    const glowOp = isNext ? '0.42' : '0.28';
+    const glow = document.createElementNS(NS, 'line');
+    glow.setAttribute('x1', a.x.toFixed(1));
+    glow.setAttribute('y1', a.y.toFixed(1));
+    glow.setAttribute('x2', b.x.toFixed(1));
+    glow.setAttribute('y2', b.y.toFixed(1));
+    glow.setAttribute('stroke', `rgba(200,169,81,${glowOp})`);
+    glow.setAttribute('stroke-width', String(glowW));
+    glow.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(glow);
+
+    // ② メイン線
+    const lineW = isNext ? '5' : '3.5';
+    const lineCol = isNext ? 'rgba(255,235,80,1.0)' : 'rgba(230,200,100,0.9)';
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', a.x.toFixed(1));
+    line.setAttribute('y1', a.y.toFixed(1));
+    line.setAttribute('x2', b.x.toFixed(1));
+    line.setAttribute('y2', b.y.toFixed(1));
+    line.setAttribute('stroke', lineCol);
+    line.setAttribute('stroke-width', lineW);
+    line.setAttribute('stroke-linecap', 'round');
+    if(!isNext) line.classList.add('route-pulse');
+    svg.appendChild(line);
+
+    // 矢印（中間点）
+    const mx  = (a.x + b.x) / 2;
+    const my  = (a.y + b.y) / 2;
+    const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('transform', `translate(${mx.toFixed(1)},${my.toFixed(1)}) rotate(${ang.toFixed(1)})`);
+    if(!isNext) g.classList.add('route-pulse');
+
+    // 輪郭（コントラスト用の暗い影）
+    const outline = document.createElementNS(NS, 'polygon');
+    outline.setAttribute('points', isNext ? '-12,-10 18,0 -12,10' : '-11,-8.5 16,0 -11,8.5');
+    outline.setAttribute('fill', 'rgba(0,0,0,0.5)');
+    g.appendChild(outline);
+
+    // グロー
+    const triGlow = document.createElementNS(NS, 'polygon');
+    triGlow.setAttribute('points', isNext ? '-11,-9 16,0 -11,9' : '-10,-7.5 14,0 -10,7.5');
+    triGlow.setAttribute('fill', `rgba(200,169,81,${isNext ? '0.55' : '0.35'})`);
+    g.appendChild(triGlow);
+
+    // 本体
+    const tri = document.createElementNS(NS, 'polygon');
+    tri.setAttribute('points', isNext ? '-9,-7.5 13,0 -9,7.5' : '-8,-6 12,0 -8,6');
+    tri.setAttribute('fill', isNext ? 'rgba(255,245,80,1.0)' : 'rgba(245,215,100,0.95)');
+    g.appendChild(tri);
+
+    svg.appendChild(g);
+  }
+
+  board.insertBefore(svg, board.firstChild);
+}
+
+// ===== REACHABLE HIGHLIGHT =====
+// サイコロを振る前に1〜6マス先（バウンス考慮）を薄くハイライト
+function highlightReachable(){
+  clearHighlights();
+  if(G.rolling || G.over) return;
+  const cur = G.positions[G.cur];
+  const seen = new Set();
+  for(let dice = 1; dice <= 6; dice++){
+    const raw = cur + dice;
+    const pos = raw <= GOAL ? raw : 2 * GOAL - raw;
+    if(pos >= 0 && pos <= GOAL) seen.add(pos);
+  }
+  seen.forEach(pos => {
+    const el = document.getElementById(`sq${pos}`);
+    if(el) el.classList.add('sq-reachable');
+  });
+}
+
+function clearHighlights(){
+  document.querySelectorAll('.sq-reachable,.sq-target')
+    .forEach(el => el.classList.remove('sq-reachable','sq-target'));
 }
 
 // ===== RENDER TOKENS =====
@@ -332,10 +505,15 @@ function renderBar(){
     const chip = document.createElement('div');
     chip.className = `pchip${i === G.cur ? ' cur' : ''}`;
     chip.id = `chip${i}`;
+    const drinks   = G.drinks ? G.drinks[i] : 0;
+    const posLabel = pos === 0 ? 'スタート' : pos === GOAL ? '🏆 GOAL' : `${pos}マス目`;
     chip.innerHTML = `
       <div class="pchip-dot" style="background:${p.color}"></div>
-      <div class="pchip-name">${p.name}</div>
-      <div class="pchip-pos">${pos === 0 ? 'スタート' : pos === GOAL ? '🏆GOAL' : pos + 'マス'}</div>`;
+      <div class="pchip-info">
+        <div class="pchip-name">${p.name}</div>
+        <div class="pchip-pos">${posLabel}</div>
+      </div>
+      <div class="pchip-drink">🍺 ${drinks}杯</div>`;
     bar.appendChild(chip);
   });
 }
@@ -344,12 +522,15 @@ function updateTurn(){
   const p = G.players[G.cur];
   document.getElementById('turn-info').innerHTML =
     `<span class="turn-name">${p.name}</span> のターン`;
+  renderRouteSVG(G.positions[G.cur]);
+  highlightReachable();
 }
 
 // ===== DICE =====
 function rollDice(){
   if(G.rolling || G.over) return;
   G.rolling = true;
+  clearHighlights(); // サイコロを振り始めたらreachableを消す
   const btn  = document.getElementById('roll-btn');
   const dice = document.getElementById('dice');
   const num  = document.getElementById('dice-num');
@@ -371,7 +552,15 @@ function rollDice(){
       void num.offsetWidth;
       num.classList.add('pop');
 
-      setTimeout(() => movePlayer(result), 500);
+      // 着地予定マスを緑ハイライト → 少し見せてからコマを動かす
+      setTimeout(() => {
+        const startPos = G.positions[G.cur];
+        const raw      = startPos + result;
+        const finalPos = raw <= GOAL ? raw : Math.max(0, 2 * GOAL - raw);
+        const tEl = document.getElementById(`sq${finalPos}`);
+        if(tEl) tEl.classList.add('sq-target');
+        setTimeout(() => movePlayer(result), 700);
+      }, 500);
     }
   }, 55);
 }
@@ -418,6 +607,8 @@ function flashScreen(color){
 // ===== MOVE PLAYER =====
 // ゴールをオーバーした場合は「超えた分だけ戻る」バウンスルール
 function movePlayer(totalSteps){
+  // 着地予定ハイライトを解除してからアニメ開始
+  document.querySelectorAll('.sq-target').forEach(el => el.classList.remove('sq-target'));
   const pi       = G.cur;
   const startPos = G.positions[pi];
   const rawPos   = startPos + totalSteps;
@@ -459,11 +650,13 @@ function doSquareEvent(pos, pi, chainDepth = 0){
   switch(sq.type){
     case 'drink':{
       const e = pick(DRINK);
+      G.drinks[pi]++;
       showModal('🍺','飲むマス',`${pname}が飲む！`, e.body, '#ff4d4d', () => nextTurn());
       break;
     }
     case 'all_drink':{
       const e = pick(ALL_DRINK);
+      G.players.forEach((_,i) => G.drinks[i]++);
       showModal('🥂','全員飲むマス','全員で乾杯！🥂', e.body, '#ff8c42', () => nextTurn());
       break;
     }
@@ -474,7 +667,9 @@ function doSquareEvent(pos, pi, chainDepth = 0){
     }
     case 'game':{
       const e = pick(GAME);
-      showModal('🎲','ゲームマス','ミニゲーム！', e.body, '#9333ea', () => nextTurn());
+      showModal('🎲','ゲームマス','ミニゲーム！', e.body, '#9333ea', () => {
+        showDrinkSelect(() => nextTurn());
+      });
       break;
     }
     case 'advance':{
@@ -503,6 +698,7 @@ function doSquareEvent(pos, pi, chainDepth = 0){
 
     // ===== 特殊マス =====
     case 'electric':{
+      G.players.forEach((_,i) => G.drinks[i]++);
       flashScreen('rgba(255,230,50,0.85)');
       showModal('⚡','電撃マス','ビリビリ⚡！！',
         '全員まとめて一気飲み！このマスに言い訳は通じない！',
@@ -530,7 +726,9 @@ function doSquareEvent(pos, pi, chainDepth = 0){
     }
     case 'king':{
       const cmd = pick(KING);
-      showModal('👑','王様マス',`👑 ${pname}が王様！`, cmd, '#D97706', () => nextTurn());
+      showModal('👑','王様マス',`👑 ${pname}が王様！`, cmd, '#D97706', () => {
+        showDrinkSelect(() => nextTurn());
+      });
       break;
     }
     case 'warp':{
@@ -558,6 +756,7 @@ function doSquareEvent(pos, pi, chainDepth = 0){
           flashScreen('rgba(0,0,0,0.92)');
           setTimeout(() => {
             G.positions[pi] = 0;
+            G.drinks[pi]++;
             renderTokens(); renderBar();
             flashSquare(0);
             setTimeout(() => {
@@ -613,6 +812,15 @@ function modalBtnPrimary(){
     const btn2 = document.getElementById('m-btn2');
     btn2.textContent   = '全員セーフ 🙌';
     btn2.style.display = 'block';
+  } else if(modalMode === 'quiz-a'){
+    // 飲んだ人を選ぶ画面へ
+    const savedCb = modalCb;
+    modalCb = null;
+    document.getElementById('modal').classList.remove('show');
+    document.getElementById('m-btn2').style.display = 'none';
+    document.getElementById('m-answer').style.display = 'none';
+    modalMode = 'normal';
+    setTimeout(() => showDrinkSelect(savedCb), 300);
   } else {
     closeModal();
   }
@@ -625,6 +833,68 @@ function closeModal(){
   modalMode = 'normal';
   const cb = modalCb;
   modalCb = null;
+  if(cb) setTimeout(cb, 200);
+}
+
+// ===== 誰が飲んだか選択モーダル =====
+function showDrinkSelect(cb){
+  drinkSelectCb = cb;
+  modalMode = 'drink-select';
+
+  document.getElementById('m-icon').textContent  = '🍺';
+  document.getElementById('m-type').textContent  = '飲んだ人を選択';
+  document.getElementById('m-title').textContent = '誰が飲んだ？';
+  document.getElementById('m-body').textContent  = '飲んだ人を選んでください（複数選択OK）';
+  document.getElementById('m-answer').style.display = 'none';
+
+  // プレイヤーチェックボックス生成
+  const checksDiv = document.getElementById('m-player-checks');
+  checksDiv.innerHTML = '';
+  G.players.forEach((p, i) => {
+    const label = document.createElement('label');
+    label.className = 'm-player-check';
+    label.innerHTML = `
+      <input type="checkbox" value="${i}">
+      <span class="m-check-dot" style="background:${p.color}"></span>
+      <span class="m-check-name">${p.name}</span>
+      <span class="m-check-count">現在 ${G.drinks[i]}杯</span>`;
+    const inp = label.querySelector('input');
+    inp.addEventListener('change', () => label.classList.toggle('checked', inp.checked));
+    checksDiv.appendChild(label);
+  });
+
+  document.getElementById('m-player-select').style.display = 'block';
+  document.getElementById('m-btn').style.display = 'none';
+
+  const btn2 = document.getElementById('m-btn2');
+  btn2.textContent = '誰も飲まなかった 🙅';
+  btn2.style.display = 'block';
+  btn2.onclick = skipDrinkSelect;
+
+  document.getElementById('modal').classList.add('show');
+}
+
+function confirmDrinkers(){
+  document.querySelectorAll('#m-player-checks input:checked')
+    .forEach(inp => { G.drinks[+inp.value]++; });
+  closeDrinkSelect();
+}
+
+function skipDrinkSelect(){ closeDrinkSelect(); }
+
+function closeDrinkSelect(){
+  document.getElementById('m-player-select').style.display = 'none';
+  const btn = document.getElementById('m-btn');
+  btn.style.display = 'block';
+  btn.textContent   = 'わかった！';
+  const btn2 = document.getElementById('m-btn2');
+  btn2.style.display = 'none';
+  btn2.onclick = closeModal;
+  modalMode = 'normal';
+  document.getElementById('modal').classList.remove('show');
+  renderBar();
+  const cb = drinkSelectCb;
+  drinkSelectCb = null;
   if(cb) setTimeout(cb, 200);
 }
 
@@ -641,10 +911,44 @@ function nextTurn(){
 function showVictory(wi){
   G.over = true;
   const winner = G.players[wi];
-  const losers = G.players.filter((_, i) => i !== wi).map(p => p.name).join('・');
+
+  // 最多飲酒者を特定 → +1杯追加
+  const maxDrinks = Math.max(...G.drinks);
+  const topIdx    = G.drinks.lastIndexOf(maxDrinks); // 同点なら後の人
+  if(G.players.length > 1) G.drinks[topIdx]++;
+
+  // ゴールできなかったプレイヤー
+  const loserNames = G.players.filter((_, i) => i !== wi).map(p => p.name);
+
+  // 飲酒ランキング（多い順）
+  const ranking = G.players
+    .map((p, i) => ({ p, drinks: G.drinks[i] }))
+    .sort((a, b) => b.drinks - a.drinks);
+
+  // extra drink 行
+  let extraRows = '';
+  if(loserNames.length > 0)
+    extraRows += `<div class="v-extra-row">😭 ${loserNames.join('・')} は罰杯！🍺</div>`;
+  if(G.players.length > 1)
+    extraRows += `<div class="v-extra-row">🏆 最多飲酒 ${G.players[topIdx].name}（${G.drinks[topIdx]}杯）追加で1杯！</div>`;
+
+  // ランキング行
+  const rankRows = ranking.map(({ p, drinks }, i) =>
+    `<div class="v-rank-row">
+      <span class="v-rank-num">${i + 1}.</span>
+      <span class="v-rank-dot" style="background:${p.color}"></span>
+      <span class="v-rank-name">${p.name}</span>
+      <span class="v-rank-count">🍺 ${drinks}杯</span>
+    </div>`).join('');
+
   document.getElementById('v-title').textContent = `🎉 ${winner.name} の勝ち！`;
-  document.getElementById('v-sub').textContent   =
-    losers ? `残りの ${losers} は全員罰杯！🍺` : 'おめでとう！';
+  document.getElementById('v-drink-section').innerHTML = `
+    ${extraRows ? `<div class="v-extra-drink">${extraRows}</div>` : ''}
+    <div class="v-drink-ranking">
+      <div class="v-rank-title">最終飲酒ランキング</div>
+      ${rankRows}
+    </div>`;
+
   document.getElementById('victory').classList.add('show');
   confetti();
 }

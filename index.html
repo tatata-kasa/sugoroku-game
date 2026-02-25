@@ -75,6 +75,12 @@
       <div class="m-answer-label">✅ 正解はこちら</div>
       <div class="m-answer-text" id="m-answer-text"></div>
     </div>
+    <!-- 誰が飲んだか選択エリア（quiz/game/king時のみ表示） -->
+    <div class="m-player-select" id="m-player-select" style="display:none">
+      <div class="m-player-select-label">🍺 誰が飲んだ？（複数選択OK）</div>
+      <div class="m-player-checks" id="m-player-checks"></div>
+      <button class="m-confirm-btn" onclick="confirmDrinkers()">確定！🍺</button>
+    </div>
     <div class="m-btn-row">
       <button class="m-btn" id="m-btn" onclick="modalBtnPrimary()">わかった！</button>
       <button class="m-btn m-btn-safe" id="m-btn2" onclick="closeModal()" style="display:none">全員セーフ 🙌</button>
@@ -86,7 +92,7 @@
 <div id="victory">
   <div class="v-emoji">🎉</div>
   <div class="v-title" id="v-title"></div>
-  <div class="v-sub"   id="v-sub"></div>
+  <div class="v-drink-section" id="v-drink-section"></div>
   <button class="v-btn" onclick="resetGame()">もう一回遊ぶ！</button>
 </div>
 
