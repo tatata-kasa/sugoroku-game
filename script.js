@@ -192,6 +192,16 @@ const KING = [
   '全員に「今一番恥ずかしい最近の失敗」を一言ずつ言わせよ！言えなかった人は1杯！',
 ];
 
+// ===== 特殊カード =====
+const CARDS = [
+  { id:'skip',     icon:'🛡️', name:'イベント無効',  desc:'今回着地したマスのイベントをスキップ！飲まなくてOK！' },
+  { id:'transfer', icon:'👉', name:'飲む転嫁',      desc:'今回「飲む」マスに止まっても、右隣のプレイヤーが代わりに飲む！' },
+  { id:'bonus',    icon:'⏩', name:'ダイス+2',      desc:'今回のサイコロの目に+2マスのボーナス！' },
+  { id:'roll2',    icon:'🎲🎲', name:'2択ロール',  desc:'サイコロを2回振って、大きい方の目を使用！' },
+  { id:'party',    icon:'🥂', name:'強制乾杯',      desc:'自分以外の全員が今すぐ1杯飲む！即時発動！' },
+  { id:'nominate', icon:'🎯', name:'指名飲み',      desc:'好きなプレイヤーを1人指名して1杯飲ませる！即時発動！' },
+];
+
 // ===== STATE =====
 let G = {
   players:[], positions:[], cur:0,
@@ -254,9 +264,11 @@ function startGame(){
   G.positions = new Array(names.length).fill(0);
   G.drinks  = new Array(names.length).fill(0);
   G.cur     = 0;
-  G.rolling = false;
-  G.over    = false;
-  G.squares = makeSquares();
+  G.rolling    = false;
+  G.over       = false;
+  G.cardUsed   = new Array(names.length).fill(false);
+  G.cardEffect = null;
+  G.squares    = makeSquares();
 
   document.getElementById('setup').style.display = 'none';
   document.getElementById('game').style.display  = 'flex';
@@ -546,6 +558,7 @@ function updateTurn(){
     `<span class="turn-name">${p.name}</span> のターン`;
   renderRouteSVG(G.positions[G.cur]);
   highlightReachable();
+  updateCardBtn();
 }
 
 // ===== DICE =====
@@ -567,21 +580,37 @@ function rollDice(){
     if(++count >= 14){
       clearInterval(iv);
       dice.classList.remove('rolling');
-      const result = rnd(6) + 1;
-      dice.textContent = FACES[result - 1];
+      let rollVal = rnd(6) + 1;
 
-      num.textContent = result;
+      // カード効果: 2択ロール（2つのうち高い方）
+      if(G.cardEffect === 'roll2'){
+        const r2 = rnd(6) + 1;
+        rollVal = Math.max(rollVal, r2);
+        G.cardEffect = null;
+      }
+
+      // カード効果: ダイス+2
+      let bonusSteps = 0;
+      if(G.cardEffect === 'bonus'){
+        bonusSteps = 2;
+        G.cardEffect = null;
+      }
+
+      const totalMove = rollVal + bonusSteps;
+      dice.textContent = FACES[rollVal - 1];
+
+      num.textContent = bonusSteps > 0 ? `${rollVal}+${bonusSteps}` : rollVal;
       void num.offsetWidth;
       num.classList.add('pop');
 
       // 着地予定マスを緑ハイライト → 少し見せてからコマを動かす
       setTimeout(() => {
         const startPos = G.positions[G.cur];
-        const raw      = startPos + result;
+        const raw      = startPos + totalMove;
         const finalPos = raw <= GOAL ? raw : Math.max(0, 2 * GOAL - raw);
         const tEl = document.getElementById(`sq${finalPos}`);
         if(tEl) tEl.classList.add('sq-target');
-        setTimeout(() => movePlayer(result), 700);
+        setTimeout(() => movePlayer(totalMove), 700);
       }, 500);
     }
   }, 55);
@@ -666,14 +695,32 @@ function stepForward(pi, stepsLeft, cb){
 // ===== SQUARE EVENTS =====
 // chainDepth: advance/retreat/warp の連鎖深さ（無限ループ防止、最大3回）
 function doSquareEvent(pos, pi, chainDepth = 0){
+  // カード効果: イベントスキップ
+  if(G.cardEffect === 'skip'){
+    G.cardEffect = null;
+    showModal('🛡️','🃏 カード効果！','イベントをスキップ！',
+      'カードの効果でこのマスのイベントをスキップ！飲まなくてOK！', '#C8A951', () => nextTurn());
+    return;
+  }
+
   const sq    = G.squares[pos];
   const pname = G.players[pi].name;
 
   switch(sq.type){
     case 'drink':{
       const e = pick(DRINK);
-      G.drinks[pi]++;
-      showModal('🍺','飲むマス',`${pname}が飲む！`, e.body, '#ff4d4d', () => nextTurn());
+      // カード効果: 飲む転嫁
+      if(G.cardEffect === 'transfer'){
+        G.cardEffect = null;
+        const rightIdx = (pi + 1) % G.players.length;
+        G.drinks[rightIdx]++;
+        const rightName = G.players[rightIdx].name;
+        showModal('👉','🃏 カード効果！','飲む転嫁！',
+          `${pname}の代わりに${rightName}が飲む！`, '#C8A951', () => nextTurn());
+      } else {
+        G.drinks[pi]++;
+        showModal('🍺','飲むマス',`${pname}が飲む！`, e.body, '#ff4d4d', () => nextTurn());
+      }
       break;
     }
     case 'all_drink':{
@@ -922,11 +969,62 @@ function closeDrinkSelect(){
 
 // ===== NEXT TURN =====
 function nextTurn(){
+  G.cardEffect = null;
   G.cur = (G.cur + 1) % G.players.length;
   G.rolling = false;
   document.getElementById('roll-btn').disabled = false;
   document.getElementById('dice').textContent  = '🎲';
   renderBar(); updateTurn(); renderTokens();
+}
+
+// ===== SPECIAL CARD =====
+function activateCard(){
+  const pi = G.cur;
+  if(!G.cardUsed || G.cardUsed[pi] || G.rolling || G.over) return;
+
+  const card  = CARDS[rnd(CARDS.length)];
+  G.cardUsed[pi] = true;
+  updateCardBtn();
+
+  const pname = G.players[pi].name;
+
+  // 即時効果: 強制乾杯（自分以外が飲む）
+  if(card.id === 'party'){
+    G.players.forEach((_,i) => { if(i !== pi) G.drinks[i]++; });
+    renderBar();
+    showModal(card.icon, `🃏 カード: ${card.name}`, `${pname}がカードを使った！`,
+      card.desc, '#C8A951', () => {});
+    return;
+  }
+
+  // 即時効果: 指名飲み（誰か1人を選んで飲ませる）
+  if(card.id === 'nominate'){
+    showModal(card.icon, `🃏 カード: ${card.name}`, `${pname}がカードを使った！`,
+      card.desc, '#C8A951', () => {
+        showDrinkSelect(() => {});
+      });
+    return;
+  }
+
+  // 次のアクション時に発動する効果をセット
+  G.cardEffect = card.id;
+  showModal(card.icon, `🃏 カード: ${card.name}`, `${pname}がカードを使った！`,
+    card.desc, '#C8A951', () => {});
+}
+
+function updateCardBtn(){
+  const btn = document.getElementById('card-btn');
+  if(!btn) return;
+  const pi = G.cur;
+  if(!G.cardUsed || G.cardUsed[pi]){
+    btn.textContent = '🃏 使用済';
+    btn.disabled    = true;
+    btn.classList.add('used');
+  } else {
+    btn.textContent = '🃏 カード';
+    btn.disabled    = false;
+    btn.classList.remove('used');
+  }
 }
 
 // ===== VICTORY =====

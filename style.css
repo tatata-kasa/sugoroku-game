@@ -315,9 +315,13 @@ body{
 .dice-result-num.pop{animation:numPop .4s cubic-bezier(.34,1.56,.64,1)}
 .dice-result-label{font-size:clamp(.48rem,.95vmin,.62rem);opacity:.7;font-weight:600;letter-spacing:.04em}
 
+/* ロール＋カードボタン行 */
+.roll-card-row{display:flex;gap:8px;width:100%;align-items:stretch}
+
 /* ロールボタン */
 .roll-btn{
-  padding:clamp(7px,1.2vmin,12px) clamp(18px,2.8vmin,28px);
+  flex:1;
+  padding:clamp(7px,1.2vmin,12px) clamp(14px,2vmin,22px);
   border-radius:28px;border:none;
   background:linear-gradient(135deg,#FF6B35,#FF8E53);color:#fff;
   font-size:clamp(.76rem,1.55vmin,.95rem);font-weight:bold;cursor:pointer;
@@ -326,6 +330,24 @@ body{
 }
 .roll-btn:active{transform:scale(.95)}
 .roll-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* カードボタン */
+.card-btn{
+  flex-shrink:0;
+  padding:clamp(7px,1.2vmin,12px) clamp(8px,1.4vmin,14px);
+  border-radius:28px;border:none;
+  background:linear-gradient(135deg,#C8A951,#FFD700);
+  color:#1a1a1a;
+  font-size:clamp(.7rem,1.4vmin,.88rem);font-weight:bold;cursor:pointer;
+  box-shadow:0 4px 16px rgba(200,169,81,.45);transition:all .15s;
+  white-space:nowrap;
+}
+.card-btn:active{transform:scale(.95)}
+.card-btn.used,.card-btn:disabled{
+  opacity:.4;cursor:not-allowed;transform:none;
+  background:linear-gradient(135deg,#555,#777);
+  box-shadow:none;color:#ccc;
+}
 
 /* ===== 凡例 ===== */
 .legend{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;width:100%}
@@ -494,8 +516,10 @@ body{
   }
   .dice-result-num{font-size:clamp(1.4rem,5.5vw,1.9rem);min-height:1.8rem}
 
-  /* ロールボタン: 横幅いっぱい */
-  .roll-btn{width:100%;padding:10px;font-size:.9rem}
+  /* ロール＋カードボタン行: 横幅いっぱい */
+  .roll-card-row{width:100%}
+  .roll-btn{padding:10px;font-size:.9rem}
+  .card-btn{padding:10px 12px;font-size:.88rem}
 
   /* 凡例: コンパクト */
   .legend{gap:3px}
@@ -572,6 +596,11 @@ body{
   .roll-btn{
     padding:5px 10px;
     font-size:clamp(.62rem,1.2vmin,.78rem);
+    border-radius:20px;
+  }
+  .card-btn{
+    padding:5px 8px;
+    font-size:clamp(.58rem,1.1vmin,.72rem);
     border-radius:20px;
   }
 
